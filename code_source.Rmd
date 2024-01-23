@@ -1,0 +1,219 @@
+---
+title: "MODELLING AND INVESTIGATING MEMORY IMMUNE RESPONSES IN ACUTE INFECTIOUS DISEASE. APPLICATION TO INFLUENZA A VIRUS AND SARS-COV-2 REINFECTIONS. "
+author: "Mathilde Massard"
+date: "2023-11-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r lib, include=FALSE}
+library(sensitivity)
+library(rgl)
+library(Rglpk)
+library(FME)
+library(pander)
+library(fBasics)
+```
+
+# Simulation
+
+```{r,include=TRUE}
+reinf=60 #t^* time of reinfection
+max=90
+   modIAVreinf<-function(pars,time=seq(0,max,by=1)){
+
+   derivs<-function(t,state,pars){ #return rate of change
+    with(as.list(c(state,pars)),{
+
+
+dh.dt=-gammahv*v*h + bhd*(1-h-j)*(h )  - ah*h 
+
+  dj.dt=-bie*e*j + gammahv*v*h - ai*j
+  
+  dm.dt=( bmd*(1-h-j)+bmv*v)*(1-m) - am*m
+
+  
+  dp.dt =  (bpm*m*p + ap*(1 - p))*(0<t)*(t<(reinf))+(bpm*m*p + ap*(1 - p) + gammavb*Bm*v)*((reinf)<=t)*(t<=(max))
+
+
+ de.dt=(bem*m*e - bei*j*e -ae*e )*(0<t)*(t<(reinf))+ 1* (reinf<=t)*(t<(reinf+1))+(bem*m*e - bei*j*e -ae*e + gammavt*Tm*v)*((reinf+1)<=t)*(t<=(max))
+  
+
+dv.dt = (gammav*j - gammava*s*a*v - gammavh*v*h - alphav*v)*(0<t)*(t<=(reinf)) + 0.8* (reinf<=t)*(t<(reinf+1))+(gammav*j - gammava*s*a*v - gammavh*v*h - alphav*v)*((reinf+1)<=t)*(t<=(max))
+
+
+da.dt = ba*p - gammaav*s*a*v - aa*a
+
+ds.dt = rt*p*(1 - s) 
+
+dTm.dt=(btm*m*Tm*(1-Tm)-at*Tm)*(0<t)*(t<(reinf))+(btm*m*Tm*(1-Tm)-gammavt*v*Tm-at*Tm)*((reinf)<=t)*(t<=(max))
+
+dBm.dt= (bbm*m*Bm*(1-Bm)-ab*Bm)*(0<t)*(t<(reinf))+(bbm*m*Bm*(1-Bm)-gammavb*Bm*v-ab*Bm)*((reinf)<=t)*(t<=(max))
+
+
+      (list(c(dh.dt,dj.dt,dm.dt,de.dt,dp.dt,dv.dt,da.dt,ds.dt,dTm.dt,dBm.dt)))
+    })
+   }
+
+  # conditions 
+    state  <- c(h=1,j=0,m=0,e=1,p=1,v=0.8,a=1,s=0.01,Tm=0.01,Bm=0.01)
+    
+return(ode(y=state,times=time,func=derivs,parms=pars,maxsteps = 1e5))
+ }
+
+#Value to change depending on the disease
+
+#IAV
+param<-c(ah=0.001,
+         gammav= 400,
+gammava = 146.2,
+gammavh = 0.0017, 
+alphav = 2,
+bhd =  3, 
+gammahv = 0.033, 
+bie = 0.0017,
+ai = 1.2,
+bmd=0.0017, 
+bmv = 0.04, 
+am = 1, 
+bem = 10,
+bei = 10^{-8}, 
+ae = 0.4,
+bpm = 10, 
+ap = 0.4,
+ba = 0.8, 
+gammaav = 146.2, 
+aa = 0.043,
+rt = 3*10^{-2},
+bbm=15, 
+gammavb=0.2, 
+btm=15,
+gammavt=0.2, 
+at=0.01, 
+ab=0.004) 
+
+
+#param COVID19
+# param<-c(
+#   gammav= 250, 
+# gammava = 146.2,
+# gammavh = 0.0001, 
+# alphav = 1.75,
+# bhd =  3, 
+# gammahv = 0.033,
+# bie = 0.0739,
+# ai = 0.93,
+# bmd=0.0017, 
+# bmv = 0.04,
+# am = 1, 
+# bem = 10,
+# bei = 10^{-8}, 
+# ae = 0.4,
+# bpm = 10, 
+# ap = 0.4, 
+# ba = 0.8, 
+# gammaav = 146.2, 
+# aa = 0.07,
+# rt = 3*10^{-2},
+# 
+# bbm=15, 
+# gammavb=0.2, 
+# btm=15, 
+# gammavt=0.2, 
+# 
+# at=0.01, 
+# ab=0.004) 
+
+
+
+
+out<-modIAVreinf(param)
+par(mfrow=c(2,2))
+
+
+
+plot(out[,2],type="l",main="h",ylim=c(0,1))
+plot(out[,3],type="l",main="j")
+plot(out[,4],type="l",main="m")
+plot(out[,5],type="l",main="e")
+plot(out[,6],type="l",main="p",log="y")
+plot(out[,7],type="l",main="v")
+plot(out[,8],type="l",main="a",log="y")
+plot(out[,9],type="l",main="s")
+plot(out[,10],type="l",main="Memory CD8 T-cells")
+plot(out[,11],type="l",main="Memory B-cells",xlab="Days")
+plot(1-out[,2]-out[,3],type="l",main="d")
+
+
+
+at=0.01
+ah=0.001
+gammav= 400
+gammava = 146.2
+gammavh = 0.0017 
+alphav = 2
+bhd =  3
+gammahv = 0.033 
+bie = 0.0017
+ai = 1.2
+bmd=0.0017
+bmv = 0.04
+am = 1
+bem = 10
+bei = 10^{-8} 
+ae = 0.4
+bpm = 10
+ap = 0.4
+ba = 0.8
+gammaav = 146.2
+aa = 0.043
+rt = 3*10^{-2}
+bbm=15
+gammavb=0.2 
+btm=15
+gammavt=0.2 
+at=0.01 
+ab=0.004
+
+#R0 value
+t1=gammahv*((bhd-ah)/bhd)*gammav
+t2=((ba*ap*(am*bhd+bmd*ah))/((am*ap*bhd+ap*bmd*ah-bmd*bpm*ah)*aa))*ai*gammava
+t3=((bhd-ah)/bhd)*ai*gammavh+ai*alphav
+(r0=sqrt(t1/(t2+t3)))
+```
+
+
+```{r,include=TRUE}
+
+
+
+plot(out[,2],type="l",main="Evolution of epithelial cells after a reinfection at t=20 days.",ylim=c(0,1),col="green",xlab="Days",ylab="Proportion",lwd=2,lty=2)
+par(new = T) 
+lines(out[,3],type="l",col="red",lwd=2)
+par(new=T)
+lines(1-out[,2]-out[,3],type="l",col="blue",lwd=2,lty=4)
+
+legend(60, 0.7, legend=c("H", "I","D"),
+       col=c("green", "red","blue"),lty=c(2,1,3,4), cex=1.2)
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
