@@ -49,9 +49,13 @@ da.dt = ba*p - gammaav*s*a*v - aa*a
 
 ds.dt = rt*p*(1 - s) 
 
-dTm.dt=(btm*m*Tm*(1-Tm)-at*Tm)*(0<t)*(t<(reinf))+(btm*m*Tm*(1-Tm)-gammavt*v*Tm-at*Tm)*((reinf)<=t)*(t<=(max))
+#dTm.dt=(btm*m*Tm*(1-Tm)-at*Tm)*(0<t)*(t<(reinf))+(btm*m*Tm*(1-Tm)-gammavt*v*Tm-at*Tm)*((reinf)<=t)*(t<=(max))
 
-dBm.dt= (bbm*m*Bm*(1-Bm)-ab*Bm)*(0<t)*(t<(reinf))+(bbm*m*Bm*(1-Bm)-gammavb*Bm*v-ab*Bm)*((reinf)<=t)*(t<=(max))
+#dBm.dt= (bbm*m*Bm*(1-Bm)-ab*Bm)*(0<t)*(t<(reinf))+(bbm*m*Bm*(1-Bm)-gammavb*Bm*v-ab*Bm)*((reinf)<=t)*(t<=(max))
+
+dTm.dt=(btm*m*(1-Tm)-at*Tm)*(0<t)*(t<(reinf))+(btm*m*(1-Tm)-gammavt*v*Tm-at*Tm)*((reinf)<=t)*(t<=(max))
+
+dBm.dt= (bbm*m*(1-Bm)-ab*Bm)*(0<t)*(t<(reinf))+(bbm*m*(1-Bm)-gammavb*Bm*v-ab*Bm)*((reinf)<=t)*(t<=(max))
 
 
       (list(c(dh.dt,dj.dt,dm.dt,de.dt,dp.dt,dv.dt,da.dt,ds.dt,dTm.dt,dBm.dt)))
